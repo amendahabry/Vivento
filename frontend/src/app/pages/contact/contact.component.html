@@ -1,0 +1,249 @@
+<div class="contact-container">
+    <div class="contact-header">
+        <h1>Vivento</h1>
+        <a href="">
+            <img class="logo-only-image" src="vivento_logo_copy.png" alt="vivento company logo" />
+        </a>
+    </div>
+    <!-- <div class="lang-switch">
+        <button (click)="setLanguage('he')">עברית</button>
+        <button (click)="setLanguage('ar')">العربية</button>
+        <button (click)="setLanguage('en')">English</button>
+    </div> -->
+
+    <!-- <div id="explainSection">
+        <h2>{{ getTranslation('explainTitle') }}</h2>
+        <p>
+            {{ getTranslation('explainIntro') }}
+        </p>
+        <ul>
+            <li>{{ getTranslation('featurePhotos') }}</li>
+            <li>{{ getTranslation('featureRSVP') }}</li>
+            <li>{{ getTranslation('featureEventDetails') }}</li>
+            <li>{{ getTranslation('featureMobile') }}</li>
+            <li>{{ getTranslation('featureUniqueLink') }}</li>
+        </ul>
+        <p style="margin-top: 12px">
+            {{ getTranslation('explainOutro') }}
+        </p>
+    </div> -->
+
+
+    <!-- Modern Navigation Section -->
+    <div class="navigation-section">
+        <div class="nav-header">
+            <h3>{{ getTranslation('navTitle') }}</h3>
+            <p>{{ getTranslation('navSubtitle') }}</p>
+        </div>
+
+        <div class="nav-grid">
+            <!-- <div class="nav-card" (click)="navigateToSignIn()">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                    </svg>
+                </div>
+                <div class="nav-content">
+                    <h4>{{ getTranslation('navDashboard') }}</h4>
+                    <p>{{ getTranslation('navDashboardDesc') }}</p>
+                </div>
+                <div class="nav-arrow">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
+                    </svg>
+                </div>
+            </div> -->
+
+            <div class="nav-card" (click)="navigateToEvent()">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" />
+                    </svg>
+                </div>
+                <div class="nav-content">
+                    <h4>{{ getTranslation('navEvent') }}</h4>
+                    <p>{{ getTranslation('navEventDesc') }}</p>
+                </div>
+                <div class="nav-arrow">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="nav-card" (click)="navigateToUpload()">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                    </svg>
+                </div>
+                <div class="nav-content">
+                    <h4>{{ getTranslation('navPhotos') }}</h4>
+                    <p>{{ getTranslation('navPhotosDesc') }}</p>
+                </div>
+                <div class="nav-arrow">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form [formGroup]="contactForm" (ngSubmit)="handleSubmit()">
+        <h1 id="formTitle">{{ getTranslation('formTitle') }}</h1>
+        <input type="text" formControlName="name" [placeholder]="getTranslation('namePlaceholder')" />
+        <div *ngIf="contactForm.get('name')?.touched && (contactForm.get('name')?.hasError('required') || contactForm.get('name')?.hasError('minlength'))"
+            class="tos-error-message">
+            <svg class="error-icon" viewBox="0 0 24 24">
+                <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+            </svg>
+            {{ getTranslation('nameError') }}
+        </div>
+        <input type="tel" formControlName="phone" [placeholder]="getTranslation('phonePlaceholder')" pattern="[0-9]*"
+            inputmode="numeric" />
+        <div *ngIf="contactForm.get('phone')?.touched && (contactForm.get('phone')?.hasError('required') || (contactForm.get('phone')?.hasError('minlength') || contactForm.get('phone')?.hasError('pattern')))"
+            class="tos-error-message">
+            <svg class="error-icon" viewBox="0 0 24 24">
+                <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+            </svg>
+            {{ getTranslation('phoneError') }}
+        </div>
+        <input type="email" formControlName="email" [placeholder]="getTranslation('emailPlaceholder')" />
+
+        <!-- Modern Terms of Service Section -->
+        <div class="tos-section">
+            <div class="tos-checkbox-wrapper">
+                <label class="tos-checkbox-label">
+                    <input type="checkbox" formControlName="termsAccepted" class="tos-checkbox" />
+                    <span class="checkmark"></span>
+                    <span class="tos-text">
+                        {{ getTranslation('tosLabel') }}
+                        <button type="button" class="tos-link" (click)="openTosModal($event)">
+                            {{ getTranslation('tosLink') }}*
+                        </button>
+                    </span>
+                </label>
+            </div>
+            <div *ngIf="contactForm.get('termsAccepted')?.touched && contactForm.get('termsAccepted')?.invalid"
+                class="tos-error-message">
+                <svg class="error-icon" viewBox="0 0 24 24">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                </svg>
+                {{ getTranslation('tosError') }}
+            </div>
+        </div>
+
+        <!-- Modern Privacy Policy Section -->
+        <div class="tos-section">
+            <div class="tos-checkbox-wrapper">
+                <label class="tos-checkbox-label">
+                    <input type="checkbox" formControlName="privacyAccepted" class="tos-checkbox" />
+                    <span class="checkmark"></span>
+                    <span class="tos-text">
+                        {{ getTranslation('privacyLabel') }}
+                        <button type="button" class="tos-link" (click)="openPrivacyModal($event)">
+                            {{ getTranslation('privacyLink') }}*
+                        </button>
+                    </span>
+                </label>
+            </div>
+            <div *ngIf="contactForm.get('privacyAccepted')?.touched && contactForm.get('privacyAccepted')?.invalid"
+                class="tos-error-message">
+                <svg class="error-icon" viewBox="0 0 24 24">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                </svg>
+                {{ getTranslation('privacyError') }}
+            </div>
+        </div>
+
+        <!-- Modern Terms of Service Modal -->
+        <div class="tos-modal-overlay" *ngIf="showTosModal" (click)="closeTosModal()">
+            <div class="tos-modal-container" (click)="$event.stopPropagation()">
+                <div class="tos-modal-header">
+                    <div class="tos-modal-title">
+                        <div class="tos-icon">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <h2>{{ getTranslation('tosTitle') }}</h2>
+                    </div>
+                    <button type="button" class="tos-modal-close" (click)="closeTosModal()" aria-label="Close">
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="tos-modal-body">
+                    <div class="tos-content">
+                        <p>{{ getTranslation('tosContent') }}</p>
+                    </div>
+                </div>
+                <div class="tos-modal-footer">
+                    <button type="button" class="tos-modal-accept" (click)="acceptTerms()">
+                        {{ getTranslation('tosAccept') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modern Privacy Policy Modal -->
+        <div class="tos-modal-overlay" *ngIf="showPrivacyModal" (click)="closePrivacyModal()">
+            <div class="tos-modal-container" (click)="$event.stopPropagation()">
+                <div class="tos-modal-header">
+                    <div class="tos-modal-title">
+                        <div class="tos-icon">
+                            <svg viewBox="0 0 24 24">
+                                <path
+                                    d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
+                            </svg>
+                        </div>
+                        <h2>{{ getTranslation('privacyTitle') }}</h2>
+                    </div>
+                    <button type="button" class="tos-modal-close" (click)="closePrivacyModal()" aria-label="Close">
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="tos-modal-body">
+                    <div class="tos-content">
+                        <p>{{ getTranslation('privacyContent') }}</p>
+                    </div>
+                </div>
+                <div class="tos-modal-footer">
+                    <button type="button" class="tos-modal-accept" (click)="acceptPrivacy()">
+                        {{ getTranslation('privacyAccept') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" [disabled]="isSubmitting">
+            {{ getTranslation('submitButton') }}
+        </button>
+        <!-- Login Button for existing users -->
+        <div style="margin-top: 16px;">
+            <button type="button" class="login-btn" (click)="navigateToDashboard()">
+                <span>{{ getTranslation('loginButton') }}</span>
+            </button>
+        </div>
+        <div *ngIf="isSubmitting" style="text-align: center; margin-top: 40px">
+            <div class="spinner"></div>
+        </div>
+        <div *ngIf="submitMessage" class="message" [class.success]="submitSuccess" [class.error]="!submitSuccess">
+            {{ submitMessage }}
+        </div>
+    </form>
+
+</div>

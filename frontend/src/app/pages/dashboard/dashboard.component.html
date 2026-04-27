@@ -1,0 +1,514 @@
+<div class="dashboard-container" [dir]="(currentLanguage === 'he' || currentLanguage === 'ar') ? 'rtl' : 'ltr'">
+  <div class="dashboard-header">
+    <img class="logo-only-image" src="vivento_logo_copy.png" alt="vivento company logo" />
+    <h2>{{ getTranslation('userDashboard') }}</h2>
+    <button class="home-btn" (click)="goHome()" type="button">
+      <svg class="home-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M9 22V12H15V22" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" />
+      </svg>
+      {{ getTranslation('home') }}
+    </button>
+  </div>
+  @if (isLoading) {
+  <div class="loading">{{ getTranslation('loading') }}</div>
+  }
+  @if (error) {
+  <div class="error">{{ error }}</div>
+  <button class="btn-primary" (click)="signin()">{{ getTranslation('signIn') }}</button>
+  }
+  @if (!isLoading && !error) {
+  <div>
+    <section class="event-details">
+      <div class="event-details-header">
+        <h3>{{ getTranslation('eventDetails') }}</h3>
+        <div class="event-id-container">
+          @if (event && event.id) {
+          <button class="share-btn" (click)="shareEventId()" type="button">
+            {{ getTranslation('copyEventId') }}
+            <!-- <br>
+            {{ event.id }} -->
+          </button>
+          @if (eventIdCopyMessage) {
+          <div class="event-id-copy-message">{{ eventIdCopyMessage }}</div>
+          }
+          }
+        </div>
+      </div>
+      @if (event) {
+      <div class="event-editor-container">
+        <div class="event-form-group">
+          <label>{{ getTranslation('name') }}</label>
+          <input [(ngModel)]="eventEdit.name" type="text" />
+        </div>
+
+        <div class="coordinates-container">
+          <div class="event-form-group">
+            <label>{{ getTranslation('date') }}</label>
+            <input [(ngModel)]="eventEdit.date" type="date" [attr.min]="minDate" />
+          </div>
+
+          <div class="event-form-group">
+            <label>{{ getTranslation('time') }}</label>
+            <input [(ngModel)]="eventEdit.time" type="time" />
+          </div>
+        </div>
+
+        <div class="event-form-group">
+          <label>{{ getTranslation('location') }}</label>
+          <input [(ngModel)]="eventEdit.location_address" type="text" />
+        </div>
+
+        <!-- Coordinate Input Fields -->
+        <div class="coordinates-container">
+          <div class="event-form-group">
+            <label>{{ getTranslation('latitude') }}</label>
+            <input [(ngModel)]="eventEdit.latitude" type="number" step="any" placeholder="e.g., 32.0853" />
+          </div>
+          <div class="event-form-group">
+            <label>{{ getTranslation('longitude') }}</label>
+            <input [(ngModel)]="eventEdit.longitude" type="number" step="any" placeholder="e.g., 34.7818" />
+          </div>
+        </div>
+
+        <!-- Get Coordinates from Address Button -->
+        <!-- @if (eventEdit.location_address && eventEdit.location_address.trim()) {
+        <div class="coordinate-help">
+          <button class="get-coordinates-btn" (click)="getCoordinatesFromAddress()" type="button">
+            {{ getTranslation('getCoordinatesFromAddress') }}
+          </button>
+          <small class="coordinate-help-text">{{ getTranslation('coordinateHelpText') }}</small>
+        </div>
+        } -->
+
+        <div class="event-form-group">
+          <label>{{ getTranslation('note') }}</label>
+          <textarea [(ngModel)]="eventEdit.note" rows="8" type="text"></textarea>
+        </div>
+
+        <button class="save-btn" (click)="saveEventDetails()" [disabled]="isSavingEvent">
+          {{ isSavingEvent ? getTranslation('saving') : getTranslation('save')
+          }}
+        </button>
+
+        <div *ngIf="eventSaveMessage" class="event-save-message">
+          {{ eventSaveMessage }}
+        </div>
+      </div>
+      }
+      @if (!event) {
+      <p>{{ getTranslation('noEventFound') }}</p>
+      }
+    </section>
+
+    <!-- Invitation Image Upload Section -->
+    @if (event) {
+    <section class="invitation-image-section">
+      <h3>Invitation Image</h3>
+      <div class="invitation-image-container">
+        @if (invitationImageUrl) {
+        <div class="current-image">
+          <img [src]="invitationImageUrl" alt="Current invitation image" class="invitation-preview" />
+          <div class="image-info">
+            <p><strong>Current Image:</strong> {{ invitationImageName }}</p>
+            <button class="delete-image-btn" (click)="deleteInvitationImage()" type="button">
+              <mat-icon>delete</mat-icon>
+              Delete Image
+            </button>
+          </div>
+        </div>
+        }
+
+        @if (!invitationImageUrl) {
+        <div class="upload-section">
+          <p>Upload an invitation image to be sent with WhatsApp invitations</p>
+          <div class="file-upload-wrapper">
+            <input type="file" id="invitationImageUpload" (change)="onInvitationImageSelected($event)"
+              accept="image/*" />
+            <label for="invitationImageUpload" class="upload-label">
+              <i class="fa fa-upload"></i>
+              <span>Choose Image File</span>
+            </label>
+          </div>
+          @if (invitationImageName) {
+          <div class="file-name">
+            <i class="fa fa-image"></i> {{ invitationImageName }}
+            <button class="remove-file-btn" (click)="removeSelectedInvitationImage()" aria-label="Remove file">
+              <i class="fa fa-times-circle"></i>
+            </button>
+          </div>
+          <!-- <button class="upload-btn" (click)="uploadInvitationImage()" [disabled]="isUploadingImage">
+            {{ isUploadingImage ? 'Uploading...' : 'Upload Image' }}
+          </button> -->
+          }
+        </div>
+        }
+
+        @if (invitationImageUrl) {
+        <div class="upload-section">
+          <p>Replace current image:</p>
+          <div class="file-upload-wrapper">
+            <input type="file" id="invitationImageUpload" (change)="onInvitationImageSelected($event)"
+              accept="image/*" />
+            <label for="invitationImageUpload" class="upload-label">
+              <i class="fa fa-upload"></i>
+              <span>Choose New Image</span>
+            </label>
+          </div>
+          @if (invitationImageName && invitationImageName !== invitationImageName) {
+          <div class="file-name">
+            <i class="fa fa-image"></i> {{ invitationImageName }}
+            <button class="remove-file-btn" (click)="removeSelectedInvitationImage()" aria-label="Remove file">
+              <i class="fa fa-times-circle"></i>
+            </button>
+          </div>
+          <!-- <button class="upload-btn" (click)="uploadInvitationImage()" [disabled]="isUploadingImage">
+            {{ isUploadingImage ? 'Uploading...' : 'Replace Image' }}
+          </button> -->
+          }
+        </div>
+        }
+
+        @if (imageUploadMessage) {
+        <div class="image-upload-message">{{ imageUploadMessage }}</div>
+        }
+        @if (imageUploadError) {
+        <div class="image-upload-error">{{ imageUploadError }}</div>
+        }
+      </div>
+    </section>
+    }
+
+    <section class="stats">
+      <h3>{{ getTranslation('statistics') }}</h3>
+      @if (stats) {
+      <div>
+        <p><strong>{{ getTranslation('totalGuests') }}</strong> {{ stats.totalGuests }}</p>
+        <p><strong>{{ getTranslation('coming') }}</strong> {{ stats.coming }}</p>
+        <p><strong>{{ getTranslation('notComing') }}</strong> {{ stats.notComing }}</p>
+        <p><strong>{{ getTranslation('rsvpRate') }}</strong> {{ stats.rsvpRate }}</p>
+      </div>
+      }
+      @if (!stats) {
+      <p>{{ getTranslation('noStatsAvailable') }}</p>
+      }
+    </section>
+    <section class="guest-upload">
+      <h3>{{ getTranslation('uploadGuestList') }}</h3>
+      <div class="upload-controls">
+        <div class="file-upload-wrapper">
+          <div style="display:flex; gap: 8px; justify-content:center;margin-bottom: 20px;">
+            <button class="add-to-queue-btn" type="button" (click)="downloadCsvTemplate()">{{
+              getTranslation('downloadExcelOrCsv') }}</button>
+          </div>
+          <input type="file" id="fileUpload" (change)="onFileSelected($event)"
+            accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel, .xlsx, .xls" />
+          <label for="fileUpload" class="upload-label">
+            <i class="fa fa-upload"></i>
+            <span>{{ getTranslation('uploadExcelOrCsv') }}</span>
+          </label>
+        </div>
+        <div class="file-name" *ngIf="selectedFileName">
+          <i class="fa fa-file-excel"></i> {{ selectedFileName }}
+          <button class="remove-file-btn" (click)="removeSelectedFile()" aria-label="Remove file">
+            <i class="fa fa-times-circle"></i>
+          </button>
+        </div>
+        <br><br>
+        <button (click)="uploadGuestList()">{{ getTranslation('upload') }}</button>
+        <div *ngIf="templateMessage" style="text-align:center; margin-top: 0.5rem;">{{ templateMessage }}</div>
+        <hr style="margin-top: 1rem;">
+        <span style="display: flex; justify-content: center;">{{ getTranslation('or') }}</span>
+        <br><br>
+        <div style="display:flex; gap: 8px; justify-content:center;margin-bottom: 20px;">
+          <button class="add-to-queue-btn" type="button" (click)="openGoogleSheetTemplate()">{{
+            getTranslation('openGoogleSheet') }}</button>
+        </div>
+        <input type="text" [placeholder]="getTranslation('googleSheetLink')" [(ngModel)]="sheetUrl"
+          (input)="onSheetUrlChange($event)" />
+        <br><br>
+        <button (click)="uploadGuestList()">{{ getTranslation('upload') }}</button>
+      </div>
+      <div *ngIf="uploadStatus" class="upload-status">{{ uploadStatus }}</div>
+      <div *ngIf="uploadError" class="upload-error">{{ uploadError }}</div>
+      <div *ngIf="uploadError" class="upload-error">
+        <ul>
+          <li *ngFor="let err of errorGuestList">{{err.guest_name}} - {{err.phone_number}}</li>
+        </ul>
+      </div>
+
+      <!-- Manual Guest Addition Section -->
+      <div class="manual-guest-section">
+        <hr style="margin: 2rem 0;">
+        <div class="manual-guest-header">
+          <span style="display: flex; justify-content: center; margin-bottom: 1rem;">{{ getTranslation('or') }}</span>
+          <button class="manual-guest-toggle-btn" (click)="toggleManualGuestForm()" type="button">
+            {{ showManualGuestForm ? getTranslation('hideManualForm') : getTranslation('showManualForm') }}
+          </button>
+        </div>
+
+        @if (showManualGuestForm) {
+        <div class="manual-guest-form">
+          <div class="form-group">
+            <label for="guestName">{{ getTranslation('guestName') }}</label>
+            <input type="text" id="guestName" [(ngModel)]="newGuest.guest_name"
+              [placeholder]="getTranslation('guestName')" class="form-input" />
+          </div>
+
+          <div class="form-group">
+            <label for="phoneNumber">{{ getTranslation('phoneNumber') }}</label>
+            <input type="tel" id="phoneNumber" [(ngModel)]="newGuest.phone_number"
+              [placeholder]="getTranslation('phoneNumber')" class="form-input" />
+          </div>
+
+          <div class="form-actions">
+            <button class="add-guest-btn" (click)="addGuestManually()" [disabled]="isAddingGuest" type="button">
+              {{ isAddingGuest ? getTranslation('addingGuest') : getTranslation('addGuest') }}
+            </button>
+            <button class="cancel-btn" (click)="toggleManualGuestForm()" [disabled]="isAddingGuest" type="button">
+              {{ getTranslation('cancel') }}
+            </button>
+          </div>
+
+          @if (addGuestMessage) {
+          <div class="add-guest-message">{{ addGuestMessage }}</div>
+          }
+          @if (addGuestError) {
+          <div class="add-guest-error">{{ addGuestError }}</div>
+          }
+        </div>
+        }
+      </div>
+    </section>
+    <!-- GUESTS LIST -->
+    <section class="guest-list">
+      <div class="guest-list-header-row">
+        @if(filteredGuests.length > 0){
+        <div class="guest-list-actions">
+          <button class="add-to-queue-btn" (click)="addGuestsToMessagingQueue()"
+            [disabled]="isAddingToQueue || selectedGuestIds.size == 0">
+            {{ isAddingToQueue ? getTranslation('addingToQueue') :
+            (selectedGuestIds.size == 0 ? getTranslation('selectGuestsFirst') : getTranslation('addToMessagingQueue'))
+            }}
+          </button>
+          <button class="add-to-queue-btn" (click)="exportToExcel(guests)">
+            {{ getTranslation('exportToExcel') }}
+          </button>
+          @if(selectedGuestIds.size === 0) {
+          <small class="selection-hint">{{ getTranslation('selectGuestsToSend') }}</small>
+          }
+        </div>
+        }
+        <h3>{{ getTranslation('guestList') }}</h3>
+      </div>
+
+      @if (filteredGuests.length > 0) {
+      <div class="search-container">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <input type="text" name="search" [placeholder]="getTranslation('searchGuests')" [(ngModel)]="guestSearchTerm"
+            class="search-input" />
+        </div>
+      </div>
+
+      <div class="guest-list-container">
+        <div class="guest-list-header">
+          <span>
+            <input class="modern-checkbox" type="checkbox" [checked]="allGuestsSelected" (change)="toggleSelectAll()" />
+          </span>
+          <span>{{ getTranslation('GuestName') }}</span>
+          <span>{{ getTranslation('PhoneNumber') }}</span>
+          <!-- <span>{{ getTranslation('Status') }}</span> -->
+          <span></span>
+        </div>
+        @if(selectedGuestIds.size > 0) {
+        <div class="selection-summary">
+          {{ selectedGuestIds.size }} {{ getTranslation('guestsSelected') }}
+        </div>
+        }
+        <div class="guest-list-item" *ngFor="let guest of filteredGuests">
+          <span>
+            <input class="modern-checkbox" type="checkbox" [checked]="selectedGuestIds.has(guest.id)"
+              (change)="toggleGuestSelection(guest.id, $event.target.checked)" />
+          </span>
+          <span>{{ guest.guest_name }}</span>
+          <span>{{ guest.phone_number }}</span>
+          <!-- <span>{{ guest.sent_at }}</span> -->
+          <span>
+            <button class="modern-btn danger" (click)="deleteSingleGuest(guest)" type="button">
+              {{ getTranslation('delete') }}
+            </button>
+          </span>
+        </div>
+        <div class="guest-list-actions" style="margin-top: 1rem;">
+          <button class="modern-btn danger" (click)="deleteSelectedGuests()" type="button">
+            {{ getTranslation('deleteSelected') }}
+          </button>
+        </div>
+      </div>
+
+      @if (queueMessage) {
+      <div class="queue-message">{{ queueMessage }}</div>
+      }
+      }
+
+      @if (filteredGuests.length === 0) {
+      <p>{{ getTranslation('noGuestsFound') }}</p>
+      }
+    </section>
+
+    <!-- GUESTS RESPONSE LIST -->
+    <section class="guest-response-list">
+      <h3>{{ getTranslation('guestResponseList') }}</h3>
+      @if (filteredResponses.length > 0) {
+      <div class="search-container">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <input type="text" name="search" [placeholder]="getTranslation('searchResponses')"
+            [(ngModel)]="responseSearchTerm" class="search-input" />
+        </div>
+      </div>
+      <ul class="guest-response-list-container">
+        <li *ngFor="let guest of filteredResponses">
+          {{ guest.guest_name }} ({{ guest.status }}) - ({{ guest.number_of_guests }}) - {{ guest.submitted_at |
+          date:'dd/MM/yyyy HH:mm' }}
+        </li>
+      </ul>
+      <button class="add-to-queue-btn" (click)="exportToExcel(responses)">{{ getTranslation('exportToExcel') }}</button>
+      }
+      @if (filteredResponses.length === 0) {
+      <p>{{ getTranslation('noGuestsFound') }}</p>
+      }
+    </section>
+    
+    <!-- PHOTO GALLERY -->
+    @if (event) {
+      <section class="photo-gallery">
+        <div class="photo-gallery-header">
+          <h3>{{ getTranslation('eventPhotos') }}</h3>
+          <div class="photo-stats">
+            <span class="photo-count">{{ photos.length }} {{ getTranslation('photos') }}</span>
+            @if (isLoadingPhotos) {
+            <span class="loading-photos">{{ getTranslation('loadingPhotos') }}</span>
+            }
+          </div>
+        </div>
+  
+        @if (photos.length > 0) {
+        <div class="photo-grid">
+          @for (photo of photos; track photo.id) {
+          <div class="photo-item" (click)="openPhotoModal(photo)">
+            <div class="photo-wrapper">
+              @if (photo.presignedUrl) {
+              <img [src]="photo.presignedUrl" [alt]="photo.guest_name" class="photo-image"
+                (error)="onPhotoError($event, photo)" />
+              } @else {
+              <div class="photo-placeholder">
+                <svg class="photo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V5C1 4.46957 1.21071 3.96086 1.58579 3.58579C1.96086 3.21071 2.46957 3 3 3H7L9 1H15L17 3H21C21.5304 3 22.0391 3.21071 22.4142 3.58579C22.7893 3.96086 23 4.46957 23 5V19Z"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  <path
+                    d="M16 13C16 14.6569 14.6569 16 13 16C11.3431 16 10 14.6569 10 13C10 11.3431 11.3431 10 13 10C14.6569 10 16 11.3431 16 13Z"
+                    stroke="currentColor" stroke-width="2" />
+                </svg>
+              </div>
+              }
+              <div class="photo-overlay">
+                <div class="photo-info">
+                  <span class="guest-name">{{ photo.guest_name }}</span>
+                  <span class="upload-date">{{ photo.uploaded_at | date:'dd/MM/yyyy' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+  
+        <div class="photo-gallery-actions">
+          <button class="refresh-photos-btn" (click)="loadEventPhotos()" [disabled]="isLoadingPhotos">
+            <svg class="refresh-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 4V10H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M23 20V14H17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+              <path
+                d="M20.49 9C19.2214 7.33122 17.4542 6.08547 15.4078 5.44818C13.3614 4.81089 11.1436 4.81233 9.09828 5.45262C7.05296 6.09291 5.28838 7.34126 4.02286 9.012C2.75734 10.6827 2.03336 12.6968 1.95715 14.7992C1.88094 16.9016 2.45519 18.9623 3.60976 20.7286C4.76433 22.4949 6.4469 23.8639 8.40776 24.6154C10.3686 25.3669 12.5198 25.4652 14.5484 24.8962C16.577 24.3272 18.3871 23.1169 19.7041 21.4384L23 20"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            {{ getTranslation('refreshPhotos') }}
+          </button>
+        </div>
+        }
+  
+        @if (photos.length === 0 && !isLoadingPhotos) {
+        <div class="no-photos">
+          <svg class="no-photos-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V5C1 4.46957 1.21071 3.96086 1.58579 3.58579C1.96086 3.21071 2.46957 3 3 3H7L9 1H15L17 3H21C21.5304 3 22.0391 3.21071 22.4142 3.58579C22.7893 3.96086 23 4.46957 23 5V19Z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path
+              d="M16 13C16 14.6569 14.6569 16 13 16C11.3431 16 10 14.6569 10 13C10 11.3431 11.3431 10 13 10C14.6569 10 16 11.3431 16 13Z"
+              stroke="currentColor" stroke-width="2" />
+          </svg>
+          <p>{{ getTranslation('noPhotosYet') }}</p>
+          <small>{{ getTranslation('photosWillAppearHere') }}</small>
+        </div>
+        }
+      </section>
+      }
+  
+      <!-- PHOTO MODAL -->
+      @if (selectedPhoto) {
+      <div class="photo-modal-overlay" (click)="closePhotoModal()">
+        <div class="photo-modal" (click)="$event.stopPropagation()">
+          <div class="photo-modal-header">
+            <h4>{{ selectedPhoto.guest_name }}</h4>
+            <button class="close-modal-btn" (click)="closePhotoModal()">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
+          <div class="photo-modal-content">
+            @if (selectedPhoto.presignedUrl) {
+            <img [src]="selectedPhoto.presignedUrl" [alt]="selectedPhoto.guest_name" class="modal-photo-image" />
+            }
+            <div class="photo-details">
+              <p><strong>{{ getTranslation('uploadedBy') }}:</strong> {{ selectedPhoto.guest_name }}</p>
+              <p><strong>{{ getTranslation('uploadDate') }}:</strong> {{ selectedPhoto.uploaded_at | date:'dd/MM/yyyy
+                HH:mm' }}</p>
+              <p><strong>{{ getTranslation('deviceId') }}:</strong> {{ selectedPhoto.device_id }}</p>
+            </div>
+          </div>
+          <div class="photo-modal-actions">
+            <button class="delete-photo-btn" (click)="deletePhoto(selectedPhoto)" [disabled]="isDeletingPhoto">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path
+                  d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              {{ isDeletingPhoto ? getTranslation('deleting') : getTranslation('deletePhoto') }}
+            </button>
+          </div>
+        </div>
+      </div>
+      }
+  </div>
+  }
+</div>

@@ -1,0 +1,242 @@
+<div class="upload-container" [class.loading]="loading" [class.checking]="checking">
+
+  <!-- Loading State -->
+  @if (loading || checking) {
+  <div class="loading-overlay">
+    <div class="spinner-container">
+      <mat-spinner></mat-spinner>
+      <p>{{ checking ? translations.checkingEvent : translations.loading }}</p>
+    </div>
+  </div>
+  }
+
+  <!-- Error State -->
+  @if (error) {
+  <div class="error-container">
+    <div class="error-content">
+      <div class="error-icon">⚠️</div>
+      <h2>{{ translations.eventNotFound }}</h2>
+      <p>{{ translations.eventInvalidMessage }}</p>
+      <button class="btn-primary" (click)="goHome()">{{ translations.goHome }}</button>
+    </div>
+  </div>
+  }
+
+  <!-- Main Content -->
+  @if (!loading && !checking && !error) {
+  <div class="card">
+
+    <div class="main-content">
+      <!-- Header -->
+      <div class="header">
+        <a href="/contact/" class="logo-href">
+          <img class="logo-only-image" src="vivento_logo_copy.png" alt="vivento company logo" />
+        </a>
+        <div class="lang-switch">
+          <button class="lang-btn" (click)="setLanguage('en')" [class.active]="currentLang === 'en'">{{
+            translations.english }}</button>
+          <button class="lang-btn" (click)="setLanguage('he')" [class.active]="currentLang === 'he'">{{
+            translations.hebrew }}</button>
+          <button class="lang-btn" (click)="setLanguage('ar')" [class.active]="currentLang === 'ar'">{{
+            translations.arabic }}</button>
+        </div>
+
+        <div class="title-section">
+          <h1 class="main-title">🎉 {{ eventData?.name || translations.mainTitle }} 🎉</h1>
+          <h2 class="subtitle">{{ translations.subtitle }}</h2>
+          @if (eventData?.date) {
+          <p class="event-date">
+            {{ formatEventDate(eventData!.date) }}
+          </p>
+          }
+        </div>
+
+        <!-- Gallery Toggle Button -->
+        <div class="gallery-toggle">
+          <button class="btn-gallery-toggle" (click)="toggleGallery()" [class.active]="showGallery">
+            <span class="icon">{{ showGallery ? '📷' : '🖼️' }}</span>
+            <span class="text">{{ showGallery ? translations.camera : translations.myPhotos }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Guest Name Input -->
+      @if (!showGallery) {
+      <form class="input-section" [formGroup]="uploadForm" (ngSubmit)="takePhoto()">
+        <div class="input-group">
+          <label for="guestName">{{ translations.yourName }}</label>
+          <input type="text" id="guestName" formControlName="guestName" [placeholder]="translations.enterYourName"
+            class="name-input" required />
+          <div
+            *ngIf="uploadForm.get('guestName')?.invalid && (uploadForm.get('guestName')?.dirty || uploadForm.get('guestName')?.touched)"
+            class="validation-error">
+            {{ translations.pleaseEnterName }}
+          </div>
+        </div>
+      </form>
+      }
+      <!-- Success Message -->
+      @if (showSuccess) {
+      <div class="success-message">
+        <div class="success-content">
+          <div class="success-icon">✅</div>
+          <h3>{{ translations.photoUploadedSuccessfully }}</h3>
+          <p>{{ translations.thankYouMessage }}</p>
+        </div>
+      </div>
+      }
+
+      <!-- Error Message -->
+      @if (showError) {
+      <div class="error-message">
+        <div class="error-content">
+          <div class="error-icon">❌</div>
+          <p>{{ errorMessage }}</p>
+        </div>
+      </div>
+      }
+      <!-- Camera Section -->
+      @if (!showGallery) {
+      <div class="camera-section">
+        <div class="camera-container">
+          <video #videoElement autoplay playsinline muted class="camera-video" [class.active]="isCameraActive"></video>
+
+          <canvas #canvasElement class="hidden-canvas"></canvas>
+
+          <!-- Camera Overlay -->
+          @if (isCameraActive) {
+          <div class="camera-overlay">
+            <div class="camera-frame">
+              <div class="corner top-left"></div>
+              <div class="corner top-right"></div>
+              <div class="corner bottom-left"></div>
+              <div class="corner bottom-right"></div>
+            </div>
+          </div>
+          }
+        </div>
+
+        <!-- Camera Controls -->
+        <div class="camera-controls">
+          @if (!isCameraActive) {
+          <button class="btn-camera" (click)="startCamera()" [disabled]="isUploading">
+            <span class="icon">📷</span>
+            {{ translations.openCamera }}
+          </button>
+          }
+          @if (isCameraActive) {
+          <button class="btn-camera" (click)="switchCamera()" [disabled]="isUploading">
+            <span class="icon">🔄</span>
+            {{ translations.switchCamera }}
+          </button>
+          }
+          @if (isCameraActive) {
+          <button class="btn-capture" (click)="takePhoto()" [disabled]="isUploading">
+            <span class="icon">📸</span>
+            {{ translations.takePhoto }}
+          </button>
+          }
+          @if (isCameraActive) {
+          <button class="btn-camera" (click)="stopCamera()" [disabled]="isUploading">
+            <span class="icon">❌</span>
+            {{ translations.closeCamera }}
+          </button>
+          }
+        </div>
+      </div>
+      }
+      <!-- Upload Section -->
+      @if (!showGallery) {
+      <div class="upload-section">
+        <div class="upload-divider">
+          <span>{{ translations.or }}</span>
+        </div>
+
+        <div class="file-upload">
+          <input type="file" #fileInput id="fileInput" accept="image/*" (change)="onFileSelected($event)"
+            class="file-input" />
+          <label for="fileInput" class="upload-label">
+            <span class="upload-icon">📁</span>
+            <span class="upload-text">{{ translations.chooseFromGallery }}</span>
+          </label>
+        </div>
+      </div>
+      }
+      <!-- Upload Progress -->
+      @if (isUploading && !showGallery) {
+      <div class="upload-progress">
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="uploadProgress"></div>
+        </div>
+        <p class="progress-text">{{ translations.uploadingPhoto }} {{ uploadProgress | number:'1.0-0' }}%</p>
+      </div>
+      }
+      <!-- Gallery Section -->
+      @if (showGallery) {
+      <div class="gallery-section">
+        <div class="gallery-header">
+          <h3 class="gallery-title">{{ translations.myPhotosTitle }}</h3>
+          <p class="gallery-subtitle">{{ translations.myPhotosSubtitle }}</p>
+        </div>
+
+        <!-- Loading State -->
+        @if (loadingPhotos) {
+        <div class="gallery-loading">
+          <mat-spinner></mat-spinner>
+          <p>{{ translations.loadingPhotos }}</p>
+        </div>
+        }
+        <!-- Empty State -->
+        @if (!loadingPhotos && userPhotos.length === 0) {
+        <div class="gallery-empty">
+          <div class="empty-icon">📷</div>
+          <h4>{{ translations.noPhotosYet }}</h4>
+          <p>{{ translations.noPhotosMessage }}</p>
+        </div>
+        }
+        <!-- Photos Grid -->
+        @if (!loadingPhotos && userPhotos.length > 0 && photoPresignedUrls) {
+        <div class="photos-grid">
+          @for (photo of userPhotos; track trackByPhotoId(photo)) {
+          <div class="photo-item" (click)="openPhotoModal(photo)">
+            <div class="photo-thumbnail">
+              <img [src]="getPhotoUrl(photo)" [alt]="'Photo by ' + photo.guest_name" loading="lazy">
+              <div class="photo-overlay">
+                <span class="photo-date">{{ formatPhotoDate(photo.uploaded_at) }}</span>
+              </div>
+            </div>
+            <div class="photo-info">
+              <span class="guest-name">{{ photo.guest_name }}</span>
+            </div>
+          </div>
+          }
+        </div>
+        }
+      </div>
+      }
+      <!-- Photo Modal -->
+      @if (showPhotoModal && selectedPhoto) {
+      <div class="photo-modal" (click)="closePhotoModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>{{ translations.photoDetails }}</h3>
+            <button class="modal-close" (click)="closePhotoModal()">×</button>
+          </div>
+          <div class="modal-body">
+            <img [src]="getPhotoUrl(selectedPhoto!)" [alt]="'Photo by ' + selectedPhoto!.guest_name">
+            <div class="photo-details">
+              <p><strong>Guest:</strong> {{ selectedPhoto!.guest_name }}</p>
+              <p><strong>Date:</strong> {{ formatPhotoDate(selectedPhoto!.uploaded_at) }}</p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-delete" (click)="deletePhoto(selectedPhoto!)">{{ translations.deletePhoto }}</button>
+            <button class="btn-close" (click)="closePhotoModal()">{{ translations.close }}</button>
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+  }
+</div>

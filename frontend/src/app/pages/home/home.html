@@ -1,0 +1,91 @@
+<!-- Language Switch -->
+<div class="lang-switch">
+    <button (click)="setLanguage('en')" [class.active]="currentLanguage === 'en'">English</button>
+    <button (click)="setLanguage('he')" [class.active]="currentLanguage === 'he'">עברית</button>
+    <button (click)="setLanguage('ar')" [class.active]="currentLanguage === 'ar'">العربية</button>
+</div>
+
+<section class="hero">
+    <div class="hero-content">
+        <img class="logo-only-image" src="vivento_logo_copy.png" alt="vivento company logo" />
+        <h1>{{ getTranslation('heroTitle') }}</h1>
+        <p>{{ getTranslation('heroSubtitle') }}</p>
+        <button (click)="navigateToContact()" class="cta">
+            <a>{{ getTranslation('startEventButton') }}</a>
+        </button>
+    </div>
+</section>
+
+<section class="promo-strip" aria-label="Featured highlights">
+    <h2>{{ getTranslation('screenshotTitle') }}</h2>
+    <div class="promo-grid">
+        <a class="promo" href="/event/360462f2-63c0-4738-bc0f-4f6b762200b1/">
+            <img src="rsvp_screenshot.png" width="100" height="100" alt="Rsvp screenshot" loading="lazy" />
+            <h3>{{ getTranslation('bestRvsp') }}</h3>
+        </a>
+        <a class="promo main" href="/upload-photos/360462f2-63c0-4738-bc0f-4f6b762200b1/">
+            <img src="upload-photos_screenshot.png" width="100" height="100" alt="Shared album screenshot" />
+            <h3>{{ getTranslation('sharedAlbum') }}</h3>
+        </a>
+    </div>
+</section>
+
+<section class="use-cases">
+    <h2>{{ getTranslation('useCasesTitle') }}</h2>
+    <div class="cases">
+        <div class="case">
+            <h3>{{ getTranslation('weddingsTitle') }}</h3>
+            <p>{{ getTranslation('weddingsDesc') }}</p>
+        </div>
+        <div class="case">
+            <h3>{{ getTranslation('birthdayTitle') }}</h3>
+            <p>{{ getTranslation('birthdayDesc') }}</p>
+        </div>
+        <div class="case">
+            <h3>{{ getTranslation('genderRevealTitle') }}</h3>
+            <p>{{ getTranslation('genderRevealDesc') }}</p>
+        </div>
+        <div class="case">
+            <h3>{{ getTranslation('gatheringTitle') }}</h3>
+            <p>{{ getTranslation('gatheringDesc') }}</p>
+        </div>
+    </div>
+</section>
+
+<section class="features">
+    <div class="feature">
+        <!-- RSVP SVG -->
+        <svg width="64" height="64" fill="none" viewBox="0 0 24 24">
+            <path fill="#2575fc"
+                d="M4 3h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1zm15 2H5v14h14V5zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h6v2H7v-2z" />
+        </svg>
+        <h2>{{ getTranslation('easyRsvpTitle') }}</h2>
+        <p>{{ getTranslation('easyRsvpDesc') }}</p>
+    </div>
+
+    <div class="feature">
+        <!-- Photo Upload SVG -->
+        <svg width="64" height="64" fill="none" viewBox="0 0 24 24">
+            <path fill="#2575fc"
+                d="M4 4a2 2 0 012-2h12a2 2 0 012 2v5l-2-2-3 4-4-5-5 7H4V4zm0 16v-4h4l4-5 4 5 3-4 3 3v5a2 2 0 01-2 2H6a2 2 0 01-2-2z" />
+        </svg>
+        <h2>{{ getTranslation('sharedAlbumTitle') }}</h2>
+        <p>{{ getTranslation('sharedAlbumDesc') }}</p>
+    </div>
+
+    <div class="feature">
+        <!-- QR Code SVG -->
+        <svg width="64" height="64" fill="none" viewBox="0 0 24 24">
+            <path fill="#2575fc"
+                d="M3 3h8v8H3V3zm2 2v4h4V5H5zm10-2h6a1 1 0 011 1v6h-2V5h-4V3zm6 16v2h-2v-2h2zm-4 0v2h-2v-2h2zm2-2v2h-2v-2h2zM3 13h8v8H3v-8zm2 2v4h4v-4H5z" />
+        </svg>
+        <h2>{{ getTranslation('qrCodeTitle') }}</h2>
+        <p>{{ getTranslation('qrCodeDesc') }}</p>
+    </div>
+</section>
+
+<section class="cta-banner">
+    <h2>{{ getTranslation('ctaBannerTitle') }}</h2>
+    <p>{{ getTranslation('ctaBannerSubtitle') }}</p>
+    <button (click)="navigateToContact()" class="cta">{{ getTranslation('tryViventoButton') }}</button>
+</section>

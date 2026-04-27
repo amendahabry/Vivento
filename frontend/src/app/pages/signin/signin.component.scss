@@ -1,0 +1,99 @@
+.full-page-container {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(90deg, #5d7aff, #764ba2);
+}
+
+.signin-container {
+  max-width: 400px;
+  margin: 60px auto;
+  background: linear-gradient(135deg, #f8fafc 0%, #e0c3fc 100%);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.logo-only-image {
+  width: 50px;
+  border-radius: 12px;
+}
+
+.logo-only-image:hover {
+  transform: scale(1.06) rotate(-2deg);
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.25), 0 3px 12px rgba(118, 75, 162, 0.18);
+}
+
+h2 {
+  margin-bottom: 1.5rem;
+  color: #764ba2;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.form-group {
+  margin-bottom: 1.2rem;
+  text-align: left;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #764ba2;
+  font-weight: 600;
+}
+
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 2px solid #e1e5e9;
+  font-size: 16px;
+  background: #fff;
+  color: #333;
+  transition: border-color 0.3s;
+}
+
+input:focus {
+  border-color: #764ba2;
+  outline: none;
+}
+
+button[type="submit"] {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background 0.3s, transform 0.2s;
+}
+
+button[type="submit"]:hover {
+  background: linear-gradient(135deg, #5a6fd8, #6a4190);
+  transform: translateY(-2px);
+}
+
+.error-message {
+  color: #e53e3e;
+  background: #fff0f0;
+  border: 1px solid #e53e3e;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 1rem;
+  font-size: 15px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}

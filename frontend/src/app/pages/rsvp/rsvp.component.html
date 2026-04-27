@@ -1,0 +1,130 @@
+<div class="rsvp-background"></div>
+<div class="rsvp-blur"></div>
+@if (isLoading) {
+<div class="loading-screen">
+    <p class="loading-text">{{ getTranslation('checkMessage') }}...</p>
+</div>
+} @else if (!event) {
+<div class="error-screen">
+    <div class="error-icon">❌</div>
+    <h3>{{ getTranslation('error') }}</h3>
+    <button (click)="retry()" class="retry-btn">{{ getTranslation('retry') }}</button>
+</div>
+}
+@if (!isLoading && event) {
+<!-- Main Content -->
+<div class="card" [class.submitted]="isSubmitted"
+    [dir]="(currentLanguage === 'he' || currentLanguage === 'ar') ? 'rtl' : 'ltr'">
+    @if (!isSubmitted) {
+    <!-- Event Header -->
+    <a href="">
+        <img class="logo-only-image" src="vivento_logo_copy.png" alt="vivento company logo" />
+    </a>
+    <div class="event-header">
+        <h2 class="event-title">
+            <span class="event-name">{{ event.name }}</span>
+        </h2>
+        <p class="event-date">{{ event.date }}</p>
+        @if(event.location_address){
+        <h4 class="location-title">{{ getTranslation('location') }}</h4>
+        <p class="location-address">
+            <span class="location-icon">📍</span>
+            {{ event.location_address }}
+        </p>
+        }
+        <!-- <h3 class="invite-text">{{ getTranslation('invite') }}</h3> -->
+    </div>
+
+    <!-- Language Switcher -->
+    <div class="lang-switch">
+        <button (click)="setLanguage('en')" [class.active]="currentLanguage === 'en'" class="lang-btn">
+            English
+        </button>
+        <button (click)="setLanguage('he')" [class.active]="currentLanguage === 'he'" class="lang-btn">
+            עברית
+        </button>
+        <button (click)="setLanguage('ar')" [class.active]="currentLanguage === 'ar'" class="lang-btn">
+            العربية
+        </button>
+    </div>
+    @if(event.note){
+    <h4 class="note-title">{{ getTranslation('note') }}</h4>
+    <p class="note">
+        {{ event.note }}
+    </p>
+    }
+    <hr>
+    <form [formGroup]="rsvpForm" (ngSubmit)="onSubmit()" class="rsvp-form">
+        <h4 class="rsvp-title">{{ getTranslation('rsvp') }}</h4>
+        <div class="form-group">
+            <label for="name">{{ getTranslation('name') }}</label>
+            <input id="name" type="text" class="form-input" formControlName="name"
+                [placeholder]="getTranslation('name')" />
+        </div>
+
+        <div class="form-group">
+            <label for="phone">{{ getTranslation('phone') }}</label>
+            <input id="phone" type="tel" class="form-input" formControlName="phone"
+                [placeholder]="getTranslation('phone')" />
+        </div>
+
+        <div class="form-group">
+            <label>{{ getTranslation('statusLabel') }}</label>
+            <div class="radio-group">
+                <label class="radio-label">
+                    <input type="radio" formControlName="status" value="coming" />
+                    <span class="radio-span">{{ getTranslation('optionYes') }}</span>
+                </label>
+                @if (showGuestsField) {
+                <div class="form-group guests-field">
+                    <label for="guests">{{ getTranslation('guests') }}</label>
+                    <select id="guests" class="form-select" formControlName="guests">
+                        @for (g of [1,2,3,4,5,6,7,8,9,10]; track g) {
+                        <option [value]="g">{{ g }}</option>
+                        }
+                    </select>
+                </div>
+                }
+                <label class="radio-label">
+                    <input type="radio" formControlName="status" value="not_coming" />
+                    <span class="radio-span">{{ getTranslation('optionNo') }}</span>
+                </label>
+            </div>
+        </div>
+
+        <button type="submit" class="submit-btn" [disabled]="rsvpForm.invalid">
+            {{ getTranslation('submit') }}
+        </button>
+    </form>
+    }
+    <!-- Success Message -->
+    <div *ngIf="isSubmitted" class="success-message">
+        <div class="success-icon">✅</div>
+        <h3>{{ getTranslation('thanks') }}</h3>
+        <!-- <p>Redirecting to photo upload...</p> -->
+    </div>
+
+    <!-- Location Section -->
+    <div class="location-section">
+
+
+        <div class="navigation-buttons">
+            @if(event.google_maps_url){
+            <button (click)="openGoogleMaps()" class="nav-btn google-maps-btn">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/a/aa/Google_Maps_icon_%282020%29.svg"
+                    alt="Google Maps" class="nav-icon" />
+                <span>Google Maps</span>
+            </button>
+            }
+
+            @if(event.waze_url){
+            <button (click)="openWaze()" class="nav-btn waze-btn">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/37/Waze_logo_2022.png" alt="Waze"
+                    class="nav-icon" />
+                <span>Waze</span>
+            </button>
+            }
+        </div>
+    </div>
+</div>
+}

@@ -1,0 +1,21 @@
+<div class="full-page-container">
+  <div class="signin-container" [dir]="(currentLanguage === 'he' || currentLanguage === 'ar') ? 'rtl' : 'ltr'">
+    <a href="">
+      <img class="logo-only-image" src="vivento_logo_copy.png" alt="vivento company logo" />
+    </a>
+    <h2>{{ getTranslation('signIn') }}</h2>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" autocomplete="off">
+      <div class="form-group">
+        <label for="username">{{ getTranslation('username') }}</label>
+        <input type="text" id="username" formControlName="username" required autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label for="password">{{ getTranslation('password') }}</label>
+        <input type="password" id="password" formControlName="password" required autocomplete="current-password" />
+      </div>
+      <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+      <button type="submit" [disabled]="isLoading">{{ isLoading ? getTranslation('signingIn') : getTranslation('signIn')
+        }}</button>
+    </form>
+  </div>
+</div>
