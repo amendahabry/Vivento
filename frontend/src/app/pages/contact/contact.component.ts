@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { ContactService, ContactData } from '../../core/services/contact.service';
 import termstranslate from './terms-of-service';
 import privacytranslate from './privacy-policy';
+import { environment } from '../../../environments/environment';
 
 type LanguageCode = 'en' | 'he' | 'ar';
 type MessageKey =
@@ -315,13 +316,13 @@ export class ContactComponent implements OnInit {
   }
 
   navigateToEvent(): void {
-    // Navigate to a sample event (you can modify this as needed)
-    this.router.navigate(['/event/360462f2-63c0-4738-bc0f-4f6b762200b1']);
+    // Navigate to demo event from environment config
+    this.router.navigate(['/event', environment.demoEventId]);
   }
 
   navigateToUpload(): void {
-    // Navigate to photo upload page (you can modify this as needed)
-    this.router.navigate(['/upload-photos/360462f2-63c0-4738-bc0f-4f6b762200b1']);
+    // Navigate to demo photo upload page from environment config
+    this.router.navigate(['/upload-photos', environment.demoUploadId]);
   }
 
   acceptTerms(): void {

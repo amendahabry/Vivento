@@ -4,7 +4,9 @@
 
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000/api'
+  apiUrl: 'http://localhost:3000/api',
+  demoEventId: '360462f2-63c0-4738-bc0f-4f6b762200b1',
+  demoUploadId: '360462f2-63c0-4738-bc0f-4f6b762200b1'
 };
 
 /*

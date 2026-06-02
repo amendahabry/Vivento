@@ -190,8 +190,9 @@ class EventController {
         });
       }
 
-      const sql = `UPDATE events SET ${fields.join(', ')} WHERE id = ?`;
+      const sql = `UPDATE events SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`;
       values.push(eventId);
+      values.push(req.user.userId); // Add authorization check
 
       db.run(sql, values, function(err) {
         if (err) {
@@ -204,7 +205,7 @@ class EventController {
         if (this.changes === 0) {
           return res.status(404).json({
             success: false,
-            message: 'Event not found'
+            message: 'Event not found or unauthorized'
           });
         }
         res.json({

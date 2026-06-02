@@ -6,14 +6,29 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 
-// Multer setup for file uploads
-const upload = multer({ dest: 'uploads/' });
+// Secure multer setup - use memory storage, add size limits and MIME validation
+const upload = multer({
+    storage: multer.memoryStorage(), // Don't write to disk
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: (req, file, cb) => {
+        const allowedMimes = [
+            'text/csv',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ];
+        if (!allowedMimes.includes(file.mimetype)) {
+            return cb(new Error('Only CSV and Excel files allowed'));
+        }
+        cb(null, true);
+    }
+});
 
-// Helper: Parse CSV file
-function parseCSV(filePath) {
+// Helper: Parse CSV from buffer
+function parseCSV(buffer) {
     return new Promise((resolve, reject) => {
         const results = [];
-        fs.createReadStream(filePath)
+        const { Readable } = require('stream');
+        Readable.from(buffer.toString())
             .pipe(csv(['guest_name', 'phone_number']))
             .on('data', (data) => results.push(data))
             .on('end', () => resolve(results))
@@ -21,9 +36,9 @@ function parseCSV(filePath) {
     });
 }
 
-// Helper: Parse Excel file
-function parseExcel(filePath) {
-    const workbook = xlsx.readFile(filePath);
+// Helper: Parse Excel from buffer
+function parseExcel(buffer) {
+    const workbook = xlsx.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(sheet, { header: ['guest_name', 'phone_number'], range: 1 });
@@ -55,41 +70,36 @@ exports.uploadGuests = async (req, res) => {
 
         let guests = [];
         if (req.file) {
-            const ext = path.extname(req.file.originalname).toLowerCase();
-            if (ext === '.csv') {
-                guests = await parseCSV(req.file.path);
-            } else if (ext === '.xlsx' || ext === '.xls') {
-                guests = parseExcel(req.file.path);
+            // File is now in memory (buffer), no need to delete from disk
+            if (req.file.mimetype === 'text/csv') {
+                guests = await parseCSV(req.file.buffer);
             } else {
-                return res.status(400).json({ error: 'Unsupported file type' });
+                guests = parseExcel(req.file.buffer);
             }
-            fs.unlinkSync(req.file.path); // Clean up
         } else if (req.body.sheet_url) {
             guests = await parseGoogleSheet(req.body.sheet_url);
         } else {
             return res.status(400).json({ error: 'No file or Google Sheet URL provided' });
         }
 
+        // Sanitize imported data
+        const sanitized = guests
+            .map(g => ({
+                name: g.guest_name?.toString().trim().slice(0, 100) || ‘’,
+                phone: g.phone_number?.toString().replace(/\D/g, ‘’).slice(0, 15) || ‘’
+            }))
+            .filter(g => g.name && g.phone);
+
         // Insert guests into DB
-        const stmt = db.prepare('INSERT INTO guests (event_id, user_id, guest_name, phone_number, is_active) VALUES (?, ?, ?, ?, 1)');
+        const stmt = db.prepare(‘INSERT INTO guests (event_id, user_id, guest_name, phone_number, is_active) VALUES (?, ?, ?, ?, 1)’);
         let errors_array = [];
-        guests.forEach(g => {
-            if (g.guest_name && g.phone_number) {
-                // Ensure it's a string
-                let phone = g.phone_number.toString().trim();
-
-                // Check that it’s only digits
-                if (/^\d+$/.test(phone)) {
-                    // If less than 10 digits, pad with leading zero
-                    if (phone.length < 10) {
-                        phone = phone.padStart(10, '0');
-                    }
-
-                    stmt.run(eventId, user_id, g.guest_name, phone);
-                } else {
-                    errors_array.push({ guest_name: g.guest_name, phone_number: g.phone_number });
-                    console.warn(`Invalid phone number for guest ${g.guest_name}: ${g.phone_number}`);
-                }
+        sanitized.forEach(g => {
+            // Validate phone has at least 10 digits
+            if (g.phone.length >= 10) {
+                stmt.run(eventId, user_id, g.name, g.phone);
+            } else {
+                errors_array.push({ guest_name: g.name, phone_number: g.phone });
+                console.warn(`Invalid phone number for guest ${g.name}: ${g.phone}`);
             }
         });
         stmt.finalize();

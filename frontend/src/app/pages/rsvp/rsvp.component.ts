@@ -119,12 +119,30 @@ export class RsvpComponent implements OnInit, OnDestroy {
     return translations[key]?.[this.currentLanguage] || key;
   }
 
+  private isValidUrl(url: string): boolean {
+    if (!url) return false;
+    try {
+      const parsed = new URL(url);
+      return ['http:', 'https:'].includes(parsed.protocol);
+    } catch {
+      return false;
+    }
+  }
+
   openGoogleMaps(): void {
-    window.open(this.event.google_maps_url, '_blank');
+    if (this.event?.google_maps_url && this.isValidUrl(this.event.google_maps_url)) {
+      window.open(this.event.google_maps_url, '_blank', 'noopener,noreferrer');
+    } else {
+      console.error('Invalid Google Maps URL');
+    }
   }
 
   openWaze(): void {
-    window.open(this.event.waze_url, '_blank');
+    if (this.event?.waze_url && this.isValidUrl(this.event.waze_url)) {
+      window.open(this.event.waze_url, '_blank', 'noopener,noreferrer');
+    } else {
+      console.error('Invalid Waze URL');
+    }
   }
 
   ngOnDestroy(): void {

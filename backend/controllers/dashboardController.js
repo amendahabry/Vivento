@@ -245,6 +245,11 @@ exports.addSelectedGuestsToMessagingQueue = (req, res) => {
     return res.status(400).json({ message: 'No guest IDs provided.' });
   }
 
+  // Validate all IDs are positive integers
+  if (!selectedGuestIds.every(id => Number.isInteger(Number(id)) && Number(id) > 0)) {
+    return res.status(400).json({ message: 'Invalid guest IDs format. All IDs must be positive integers.' });
+  }
+
   // Small helpers
   const normalizeLang = (val, fallback = 'ar') => {
     const raw = (val || '').toString().trim().toLowerCase();

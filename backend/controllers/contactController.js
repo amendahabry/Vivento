@@ -38,27 +38,59 @@ exports.submitContact = (req, res) => {
         return res.status(400).json({ error: 'Name and phone are required' });
     }
 
-    const sql = `INSERT INTO contacts (name, phone, email, accept_terms, accept_policy) VALUES (?, ?, ?, ?, ?)`;
-    db.run(sql, [name, phone, email, termsAccepted, privacyAccepted], function (err) {
-        if (err) return res.status(500).json({ error: 'Failed to save contact.' });
-        const contactId = this.lastID;
+    // Validate email format if provided
+    if (email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ error: 'Invalid email format' });
+        }
+    }
 
-        const username = phone;//`user_${crypto.randomBytes(3).toString('hex')}`;
-        const password = crypto.randomBytes(8).toString('base64');
+    // Validate phone format
+    if (phone.length < 10) {
+        return res.status(400).json({ error: 'Phone must be at least 10 digits' });
+    }
 
-        bcrypt.hash(password, 10, (err, hash) => {
-            if (err) return res.status(500).json({ error: 'Failed to create user.' });
+    const username = phone;
+    const password = crypto.randomBytes(16).toString('base64').slice(0, 16); // Stronger password
 
-            db.run('INSERT INTO users (username, password_hash, contact_id) VALUES (?, ?, ?)', [username, hash, contactId], function (err) {
-                if (err) return res.status(500).json({ error: 'Failed to create user.' });
-                const userId = this.lastID;
+    // Use transaction to ensure atomicity
+    db.run('BEGIN TRANSACTION', (err) => {
+        if (err) {
+            return res.status(500).json({ error: 'Transaction failed to start' });
+        }
 
-                const eventId = uuidv4();
-                db.run('INSERT INTO events (id, user_id) VALUES (?, ?)', [eventId, userId], function (err) {
+        // Step 1: Insert contact
+        const sql = `INSERT INTO contacts (name, phone, email, accept_terms, accept_policy) VALUES (?, ?, ?, ?, ?)`;
+        db.run(sql, [name, phone, email, termsAccepted, privacyAccepted], function (err) {
+            if (err) {
+                db.run('ROLLBACK');
+                return res.status(500).json({ error: 'Failed to save contact.' });
+            }
+            const contactId = this.lastID;
+
+            // Step 2: Hash password and insert user
+            bcrypt.hash(password, 10, (err, hash) => {
+                if (err) {
+                    db.run('ROLLBACK');
+                    return res.status(500).json({ error: 'Failed to create user.' });
+                }
+
+                db.run('INSERT INTO users (username, password_hash, contact_id) VALUES (?, ?, ?)', [username, hash, contactId], function (err) {
                     if (err) {
-                        console.error(err.message);
-                        return res.status(500).json({ error: 'Failed to create event.' });
+                        db.run('ROLLBACK');
+                        return res.status(500).json({ error: 'Failed to create user.' });
                     }
+                    const userId = this.lastID;
+
+                    // Step 3: Insert event
+                    const eventId = uuidv4();
+                    db.run('INSERT INTO events (id, user_id) VALUES (?, ?)', [eventId, userId], function (err) {
+                        if (err) {
+                            console.error(err.message);
+                            db.run('ROLLBACK');
+                            return res.status(500).json({ error: 'Failed to create event.' });
+                        }
 
                     // ---- Language & BiDi helpers ----
                     const requestLang = (req.headers['x-lang'] || req.body.lang || '').toString().toLowerCase();
@@ -123,33 +155,47 @@ exports.submitContact = (req, res) => {
                     db.run(insertMsgSQL, [phone, name, 'contact', contactId, eventId, mainMessages[lang], 'pending'], function (err) {
                         if (err) {
                             console.error(err.message);
+                            db.run('ROLLBACK');
                             return res.status(500).json({ error: 'Failed to queue main WhatsApp message.' });
                         }
 
                         db.run(insertMsgSQL, [phone, name, 'contact', contactId, eventId, passwordMessages[lang], 'pending'], function (err) {
                             if (err) {
                                 console.error(err.message);
+                                db.run('ROLLBACK');
                                 return res.status(500).json({ error: 'Failed to queue password WhatsApp message.' });
                             }
 
-                            // Respond (consider NOT returning plain password in production)
-                            res.json({
-                                message: 'Contact, user, event, and WhatsApp messages created.',
-                                username,
-                                eventId
+                            // Commit transaction
+                            db.run('COMMIT', (err) => {
+                                if (err) {
+                                    console.error('Commit failed:', err);
+                                    db.run('ROLLBACK');
+                                    return res.status(500).json({ error: 'Failed to commit transaction.' });
+                                }
+
+                                // Respond (password not returned for security)
+                                res.json({
+                                    message: 'Contact, user, event, and WhatsApp messages created.',
+                                    username,
+                                    eventId
+                                });
+
+                                // Send emails asynchronously (outside transaction)
+                                if (email) {
+                                    sendEmailNotificationToUser(name, phone, email);
+                                }
+                                sendEmailNotificationToAdmin(name, phone, username);
+                            });
+                        });
+                    });
+                                });
                             });
                         });
                     });
                 });
             });
         });
-
-        // Emails (optional)
-        if (email) {
-            sendEmailNotificationToUser(name, phone, email);
-        }
-        // Consider removing password from admin email for security
-        sendEmailNotificationToAdmin(name, phone, username /*, password*/);
     });
 };
 

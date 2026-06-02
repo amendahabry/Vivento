@@ -4,34 +4,37 @@ const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
 
-// Configure AWS
-AWS.config.update({
-  accessKeyId: process.env.S3_ACCESS_KEY_ID,
-  secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
-  region: process.env.S3_REGION || 'eu-central-1'
-});
-
-const s3 = new AWS.S3();
-
-// Configure multer for memory storage
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-  },
-  fileFilter: (req, file, cb) => {
-    // Allow only image files
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed!'), false);
-    }
-  }
-});
-
 class S3Service {
   constructor() {
-    this.bucketName = process.env.S3_BUCKET || 'vivento-event-photos';
+    // Validate S3 configuration
+    const required = ['S3_BUCKET', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY'];
+    const missing = required.filter(v => !process.env[v]);
+
+    if (missing.length > 0) {
+      console.warn('S3 service unavailable - missing:', missing.join(', '));
+      console.warn('Photo upload features will not work properly');
+      this.enabled = false;
+      this.bucketName = null;
+      this.s3 = null;
+      return;
+    }
+
+    this.enabled = true;
+    this.bucketName = process.env.S3_BUCKET;
+
+    // Configure AWS only if credentials are available
+    AWS.config.update({
+      accessKeyId: process.env.S3_ACCESS_KEY_ID,
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+      region: process.env.S3_REGION || 'eu-central-1'
+    });
+
+    this.s3 = new AWS.S3();
+  }
+
+  // Check if S3 is configured
+  isEnabled() {
+    return this.enabled;
   }
 
   // Generate unique S3 key for the image
@@ -64,9 +67,13 @@ class S3Service {
 
   // Upload image to S3
   async uploadImage(fileBuffer, eventName, originalFilename, mimeType) {
+    if (!this.enabled) {
+      throw new Error('S3 service is not configured. Check S3_BUCKET, S3_ACCESS_KEY_ID, and S3_SECRET_ACCESS_KEY environment variables.');
+    }
+
     try {
       const s3Key = this.generateS3Key(eventName, originalFilename);
-      
+
       const uploadParams = {
         Bucket: this.bucketName,
         Key: s3Key,
@@ -270,5 +277,21 @@ class S3Service {
     }
   }
 }
+
+// Configure multer for memory storage (defined outside class)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Allow only image files
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+});
 
 module.exports = { S3Service, upload }; 

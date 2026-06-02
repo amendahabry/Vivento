@@ -41,12 +41,22 @@ exports.createRsvp = (req, res) => {
         return res.status(400).json({ error: 'Invalid status value' });
     }
 
-    // Convert guests to number, default to 1 if coming, 0 if not coming
-    const numberOfGuests = status === 'coming' ? (parseInt(guests) || 1) : 1;
+    // Validate event exists BEFORE creating RSVP
+    db.get('SELECT id FROM events WHERE id = ?', [eventId], (err, event) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        if (!event) {
+            return res.status(404).json({ error: 'Event not found' });
+        }
 
-    const sql = `INSERT INTO rsvp_responses (event_id, guest_name, phone_number, status, number_of_guests) VALUES (?, ?, ?, ?, ?)`;
+        // Convert guests to number, default to 1 if coming, 0 if not coming
+        const numberOfGuests = status === 'coming' ? (parseInt(guests) || 1) : 1;
 
-    db.run(sql, [eventId, name, phone, status, numberOfGuests], function (err) {
+        const sql = `INSERT INTO rsvp_responses (event_id, guest_name, phone_number, status, number_of_guests) VALUES (?, ?, ?, ?, ?)`;
+
+        db.run(sql, [eventId, name, phone, status, numberOfGuests], function (err) {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ error: 'Failed to save RSVP' });
@@ -92,6 +102,7 @@ exports.createRsvp = (req, res) => {
             success: true,
             message: 'RSVP submitted successfully',
             id: this.lastID
+        });
         });
     });
 };

@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +9,7 @@ import { saveAs } from 'file-saver-es';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { PhotoService } from '../../core/services/photo.service';
+import { forkJoin, Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -17,7 +18,8 @@ import { PhotoService } from '../../core/services/photo.service';
   standalone: true,
   imports: [FormsModule, RouterModule, CommonModule, MatButtonModule, MatIconModule]
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   event: any = null;
   responses: any[] = [];
   stats: any = null;
@@ -206,57 +208,72 @@ export class DashboardComponent implements OnInit {
       return;
     }
     const headers = new HttpHeaders({ 'Authorization': `Bearer ${this.token}` });
-    Promise.all([
-      this.http.get(`${environment.apiUrl}/dashboard/event`, { headers }).toPromise(),
-      this.http.get(`${environment.apiUrl}/dashboard/responses`, { headers }).toPromise(),
-      this.http.get(`${environment.apiUrl}/dashboard/guests`, { headers }).toPromise(),
-      this.http.get(`${environment.apiUrl}/dashboard/stats`, { headers }).toPromise(),
-      this.http.get(`${environment.apiUrl}/events`, { headers }).toPromise()
-    ]).then(([event, responses, guests, stats]) => {
-      this.event = event;
-      this.responses = responses as any[];
-      this.guests = guests as any[];
-      this.stats = stats;
-      this.isLoading = false;
-      if (this.event) {
-        this.eventEdit = {
-          name: this.event.name || '',
-          date: this.event.date || '',
-          time: this.event.time || '',
-          location_address: this.event.location_address || '',
-          latitude: this.event.latitude || '',
-          longitude: this.event.longitude || '',
-          google_maps_url: this.event.google_maps_url || '',
-          waze_url: this.event.waze_url || '',
-          note: this.event.note || ''
-        };
 
-        // Load invitation image information
-        this.getPreSignedUrls(this.event);
-        this.invitationImageName = this.event.invitation_image_name || '';
-        
-        // Load event photos
-        this.loadEventPhotos();
+    forkJoin({
+      event: this.http.get(`${environment.apiUrl}/dashboard/event`, { headers }),
+      responses: this.http.get(`${environment.apiUrl}/dashboard/responses`, { headers }),
+      guests: this.http.get(`${environment.apiUrl}/dashboard/guests`, { headers }),
+      stats: this.http.get(`${environment.apiUrl}/dashboard/stats`, { headers }),
+      events: this.http.get(`${environment.apiUrl}/events`, { headers })
+    }).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (data: any) => {
+        this.event = data.event;
+        this.responses = data.responses as any[];
+        this.guests = data.guests as any[];
+        this.stats = data.stats;
+        this.isLoading = false;
+        if (this.event) {
+          this.eventEdit = {
+            name: this.event.name || '',
+            date: this.event.date || '',
+            time: this.event.time || '',
+            location_address: this.event.location_address || '',
+            latitude: this.event.latitude || '',
+            longitude: this.event.longitude || '',
+            google_maps_url: this.event.google_maps_url || '',
+            waze_url: this.event.waze_url || '',
+            note: this.event.note || ''
+          };
+
+          // Load invitation image information
+          this.getPreSignedUrls(this.event);
+          this.invitationImageName = this.event.invitation_image_name || '';
+
+          // Load event photos
+          this.loadEventPhotos();
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.error = err.error?.message || this.getTranslation('failedToLoad');
+        this.isLoading = false;
+        this.cdr.detectChanges();
+        this.router.navigate(['/signin']);
       }
-      this.cdr.detectChanges();
-    }).catch(err => {
-      this.error = err.error?.message || this.getTranslation('failedToLoad');
-      this.isLoading = false;
-      this.cdr.detectChanges();
-      this.router.navigate(['/signin']);
     });
   }
 
   getPreSignedUrls(event: any): void {
     const headers = new HttpHeaders({ 'Authorization': `Bearer ${this.token}` });
-    this.http.get(`${environment.apiUrl}/photos/${event.invitation_image_id}/presignedForInvitations`, { headers }).toPromise()
-      .then((res: any) => {
-        this.invitationImageUrl = res.url;
-        this.cdr.detectChanges();
-      }).catch(err => {
-        this.error = err.error?.message;
-        this.cdr.detectChanges();
+    this.http.get(`${environment.apiUrl}/photos/${event.invitation_image_id}/presignedForInvitations`, { headers })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: any) => {
+          this.invitationImageUrl = res.url;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.error = err.error?.message;
+          this.cdr.detectChanges();
+        }
       });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   saveEventDetails(): void {

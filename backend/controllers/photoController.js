@@ -10,20 +10,21 @@ const s3Service = new S3Service();
 
 // Configure multer for memory storage (buffer)
 const storage = multer.memoryStorage();
+
+// Strict MIME type validation - use array instead of regex
+const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
+    fileSize: MAX_FILE_SIZE,
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Only image files are allowed!'));
+    if (!ALLOWED_MIMES.includes(file.mimetype)) {
+      return cb(new Error('Invalid file type. Only JPEG, PNG, GIF, WEBP allowed.'));
     }
+    cb(null, true);
   }
 });
 
@@ -311,23 +312,24 @@ class PhotoController {
         if (!row) {
           return res.status(404).json({ success: false, message: 'Photo not found' });
         }
-        
-        // Delete from S3 using the new service method
-        try {
-          if (row.file_id) {
-            await s3Service.deletePhoto(row.file_id);
-          }
-        } catch (s3err) {
-          console.error('S3 delete error:', s3err);
-          // Continue with database deletion even if S3 deletion fails
-        }
-        
-        // Delete from database
-        db.run('UPDATE photos SET status = 0 WHERE id = ?', [photoId], function (err) {
+
+        // Mark as deleted in DB FIRST (soft delete)
+        db.run('UPDATE photos SET status = 0 WHERE id = ?', [photoId], async function (err) {
           if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ success: false, message: 'Error deleting photo' });
           }
+
+          // Then try to delete from S3 (best effort)
+          if (row.file_id) {
+            try {
+              await s3Service.deletePhoto(row.file_id);
+            } catch (s3err) {
+              console.error('S3 delete failed (photo marked deleted in DB):', s3err);
+              // Don't fail the request - file can be cleaned up later
+            }
+          }
+
           res.json({ success: true, message: 'Photo deleted successfully' });
         });
       });

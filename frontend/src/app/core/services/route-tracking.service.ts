@@ -151,6 +151,11 @@ export class RouteTrackingService implements OnDestroy {
   }
 
   private startVisitDurationTracking(): void {
+    // Clear existing interval first to prevent memory leaks
+    if (this.visitDurationInterval) {
+      clearInterval(this.visitDurationInterval);
+    }
+
     // Update visit duration every 30 seconds
     this.visitDurationInterval = setInterval(() => {
       if (this.deviceId && this.visitStartTime) {
@@ -215,6 +220,7 @@ export class RouteTrackingService implements OnDestroy {
     // Clear interval
     if (this.visitDurationInterval) {
       clearInterval(this.visitDurationInterval);
+      this.visitDurationInterval = null;
     }
 
     this.destroy$.next();

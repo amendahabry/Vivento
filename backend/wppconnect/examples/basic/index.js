@@ -186,12 +186,15 @@ async function processQueue(client) {
     }
 
     for (const guest of messages) {
-      let phone =
-        '972' + parseInt(normalizePhoneNumber(guest.phone_number)) + '@c.us';
-      if (!phone || phone === '972null@c.us') {
-        console.error('❌ Invalid phone number:', phone);
+      const normalized = normalizePhoneNumber(guest.phone_number);
+      if (!normalized) {
+        console.error(`❌ Skipping message - invalid phone: ${guest.phone_number}`);
+        // Mark as failed in database
+        db.run(`UPDATE messaging_queue SET status = 'failed' WHERE id = ?`, [guest.id]);
         continue;
       }
+
+      const phone = `972${normalized.slice(1)}@c.us`;
 
       try {
         if (guest.event_id != null) {
@@ -303,32 +306,34 @@ function monitorSession(client) {
     let errorCount = 0; // track how many failures we’ve seen
 
     const interval = setInterval(async () => {
+      let state; // Declare at function scope so it’s available in catch block
       try {
-        const state = await client.getConnectionState();
+        state = await client.getConnectionState();
         errorCount = 0; // reset on success
 
-        if (state === 'DISCONNECTED' || state === 'UNPAIRED') {
-          console.log('Session is not paired or disconnected.');
-          await notifyAdmin(client, 'WhatsApp Down! ' + state);
-          await notifyByEmail('WhatsApp Down! ' + state, '');
+        if (state === ‘DISCONNECTED’ || state === ‘UNPAIRED’) {
+          console.log(‘Session is not paired or disconnected:’, state);
+          await notifyAdmin(client, ‘WhatsApp Down! ‘ + state);
+          await notifyByEmail(‘WhatsApp Down!’, `Session state: ${state}`);
 
           clearInterval(interval); // stop loop
           setTimeout(() => process.exit(1), 3000);
         }
       } catch (err) {
-        console.log('Session check failed:', err);
+        console.log(‘Session check failed:’, err);
         errorCount++;
 
         if (errorCount >= 2) {
-          console.log('Two consecutive errors, exiting process.');
+          console.log(‘Two consecutive errors, exiting process.’);
           clearInterval(interval);
-          await notifyByEmail('WhatsApp Down! ' + state, '');
+          const errorMsg = `Session check failed: ${err.message}`;
+          await notifyByEmail(‘WhatsApp Session Failed’, errorMsg);
           setTimeout(() => process.exit(1), 3000);
         }
       }
-    }, 5000); // run every 5s
+    }, 10000); // run every 10s (reduced overhead)
   } catch (err) {
-    console.error('monitorSession failed:', err);
+    console.error(‘monitorSession failed:’, err);
   }
 }
 
